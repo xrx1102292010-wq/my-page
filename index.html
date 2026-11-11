@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05071a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="徐瑞鑫的宇宙">
+<title>徐瑞鑫的宇宙</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  html, body {
+    height: 100%; overflow: hidden; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  body {
+    background: radial-gradient(ellipse at 50% 48%, #101840 0%, #060820 55%, #02030a 100%);
+    color: #fff;
+    font-family: -apple-system, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  canvas { position: fixed; inset: 0; display: block; touch-action: none; }
+
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 5;
+    padding: calc(env(safe-area-inset-top) + 28px) 20px 0;
+    text-align: center; pointer-events: none;
+  }
+  .eyebrow { font-size: 11px; letter-spacing: .38em; color: rgba(255,214,140,.7); margin-bottom: 8px; padding-left: .38em; }
+  h1 {
+    font-size: clamp(40px, 13vw, 68px); font-weight: 800; letter-spacing: .14em; padding-left: .14em; line-height: 1.1;
+    background: linear-gradient(100deg, #fff4d6 0%, #ffcf6b 35%, #ff8a4c 60%, #ffcf6b 85%, #fff4d6 100%);
+    background-size: 250% auto;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 7s linear infinite;
+    filter: drop-shadow(0 0 20px rgba(255,170,70,.35));
+  }
+  @keyframes shine { to { background-position: 250% center; } }
+
+  .bottom {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 0 16px calc(env(safe-area-inset-bottom) + 18px); pointer-events: none;
+  }
+  .hint { font-size: 14px; color: rgba(255,255,255,.6); letter-spacing: .08em; transition: opacity .3s; text-align: center; }
+  .warp {
+    pointer-events: auto; cursor: pointer; min-height: 50px; min-width: 190px;
+    padding: 0 30px; border-radius: 999px; font-size: 16px; font-weight: 600; color: #fff;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    transition: background .25s, box-shadow .25s, transform .1s;
+  }
+  .warp:active { transform: scale(.95); }
+  .warp.on { background: linear-gradient(100deg, #ff8a4c, #ffcf6b); color: #2a1500; border-color: transparent; box-shadow: 0 0 30px rgba(255,170,70,.6); }
+  .credit { font-size: 12px; color: rgba(255,255,255,.45); letter-spacing: .08em; }
+  .credit b { color: rgba(255,214,140,.95); font-weight: 600; }
+
+  /* 底部弹出卡片 */
+  .panel {
+    position: fixed; left: 14px; right: 14px; z-index: 10;
+    bottom: calc(env(safe-area-inset-bottom) + 142px);
+    max-width: 460px; margin: 0 auto;
+    padding: 22px 22px 22px; border-radius: 26px;
+    background: linear-gradient(160deg, rgba(255,255,255,.17), rgba(255,255,255,.06));
+    border: 1px solid rgba(255,255,255,.2);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.55);
+    transform: translateY(150%); opacity: 0;
+    transition: transform .5s cubic-bezier(.2,.9,.3,1.08), opacity .35s;
+    pointer-events: none;
+  }
+  .panel.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .panel .row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding-right: 40px; }
+  .panel .emo { font-size: 36px; }
+  .panel h2 { font-size: 24px; font-weight: 700; }
+  .panel p { color: rgba(255,255,255,.82); line-height: 1.75; font-size: 16px; }
+  .panel .x {
+    position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,.14); color: #fff; font-size: 22px; line-height: 1; cursor: pointer;
+  }
+  .panel .x:active { background: rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<header>
+  <div class="eyebrow">WELCOME TO THE UNIVERSE OF</div>
+  <h1>徐瑞鑫</h1>
+</header>
+
+<div class="panel" id="panel">
+  <button class="x" id="close" aria-label="关闭">×</button>
+  <div class="row"><div class="emo" id="pEmo"></div><h2 id="pTitle"></h2></div>
+  <p id="pText"></p>
+</div>
+
+<div class="bottom">
+  <div class="hint" id="hint">点击行星看介绍 · 左右滑动转动宇宙</div>
+  <button class="warp" id="warp">🚀 超光速:关</button>
+  <div class="credit">Designed &amp; Built by <b>徐瑞鑫</b> · © 2026</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+let W, H, cx, cy, maxR, ryF, psize;
+const mouse = { x: 0, y: 0 };
+
+function resize() {
+  const d = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * d; cv.height = H * d;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+  cx = W / 2; cy = H * 0.47;
+  const portrait = H > W;
+  maxR = portrait ? W * 0.43 : Math.min(W * 0.4, H * 0.42);
+  ryF = portrait ? 0.92 : 0.5;
+  psize = Math.max(13, Math.min(22, Math.min(W, H) * 0.042));
+  mouse.x = cx; mouse.y = cy;
+}
+addEventListener('resize', resize);
+resize();
+
+/* ===== 行星数据(文字可以自己改) ===== */
+const planets = [
+  { name: '寿来', emoji: '🔭', color: '#ff9f43', rr: .42, speed: .55, size: 1.0, a: Math.random() * 6.28,
+    text: '丢雷老母' },
+  { name: '创造力', emoji: '🎨', color: '#54a0ff', rr: .63, speed: .38, size: 1.2, ring: true, a: Math.random() * 6.28,
+    text: '丢雷老母' },
+  { name: '梦想', emoji: '🚀', color: '#ff6b9d', rr: .82, speed: .26, size: 1.1, a: Math.random() * 6.28,
+    text: '目标是星辰大海。每天向前一点点,总有一天会抵达。' },
+  { name: '你个扎啤', emoji: '👋', color: '#1dd1a1', rr: 1.0, speed: .18, size: 1.25, a: Math.random() * 6.28,
+    text: '丢雷老母' }
+];
+
+/* ===== 星空 ===== */
+const BASE = 0.0012, WARP = 0.05;
+let speed = BASE, warpOn = false;
+const stars = Array.from({ length: 280 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
+const shooting = [];
+const ripples = [];
+
+function proj(s, z, ox, oy) {
+  const k = Math.max(W, H) * 0.12 / z;
+  return [cx + ox + s.x * k, cy + oy + s.y * k];
+}
+
+/* ===== 行星位置 / 命中 ===== */
+let T = 0, timeScale = 1, selected = null, rot = 0, rotV = 0;
+const warpAmt = () => Math.max(0, Math.min(1, (speed - BASE) / (WARP - BASE)));
+
+function layout() {
+  return planets.map(p => {
+    const rx = maxR * p.rr, ry = rx * ryF;
+    const ang = p.a + T * p.speed + rot;
+    const sy = Math.sin(ang);
+    const scale = 1 + sy * 0.15;
+    return { p, x: cx + Math.cos(ang) * rx, y: cy + sy * ry, scale, r: psize * p.size * scale, back: sy < 0 };
+  });
+}
+function hit(x, y) {
+  if (warpAmt() > 0.3) return null;
+  const L = layout();
+  let best = null, bd = 1e9;
+  for (const o of L) {
+    const d = Math.hypot(x - o.x, y - o.y);
+    if (d < o.r + 22 && d < bd) { best = o.p; bd = d; }   // 手指点击范围放大
+  }
+  return best;
+}
+
+/* ===== 绘制 ===== */
+function drawPlanet(o, alpha) {
+  const { p, x, y, r } = o;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  if (p.ring) {
+    ctx.strokeStyle = 'rgba(190,215,255,.65)'; ctx.lineWidth = Math.max(2, r * .18);
+    ctx.beginPath(); ctx.ellipse(x, y, r * 1.95, r * .55, -0.35, 0, 6.283); ctx.stroke();
+  }
+  ctx.shadowColor = p.color; ctx.shadowBlur = r * 1.3;
+  ctx.fillStyle = p.color;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  ctx.shadowBlur = 0;
+  const g = ctx.createRadialGradient(x - r * .38, y - r * .38, r * .1, x - r * .1, y - r * .1, r * 1.35);
+  g.addColorStop(0, 'rgba(255,255,255,.6)');
+  g.addColorStop(.5, 'rgba(255,255,255,0)');
+  g.addColorStop(1, 'rgba(0,0,0,.65)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  if (p.ring) {
+    ctx.strokeStyle = 'rgba(190,215,255,.75)'; ctx.lineWidth = Math.max(2, r * .18);
+    ctx.beginPath(); ctx.ellipse(x, y, r * 1.95, r * .55, -0.35, 0, 3.1416); ctx.stroke();
+  }
+  if (selected === p) {
+    ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, r + 9 + Math.sin(T * 6) * 2, 0, 6.283); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.font = '600 14px -apple-system, "PingFang SC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(p.name, x, y + r * (p.ring ? 1.05 : 1) + 22);
+  ctx.restore();
+}
+
+function drawSun(alpha) {
+  const pulse = 1 + Math.sin(T * 2) * 0.05;
+  const R = psize * 1.9;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const glow = ctx.createRadialGradient(cx, cy, R * .3, cx, cy, R * 4 * pulse);
+  glow.addColorStop(0, 'rgba(255,190,80,.55)');
+  glow.addColorStop(.4, 'rgba(255,130,50,.16)');
+  glow.addColorStop(1, 'rgba(255,100,30,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(cx, cy, R * 4 * pulse, 0, 6.283); ctx.fill();
+  const core = ctx.createRadialGradient(cx - R * .25, cy - R * .25, R * .1, cx, cy, R);
+  core.addColorStop(0, '#fffbe0'); core.addColorStop(.45, '#ffc94d'); core.addColorStop(1, '#ff6a1f');
+  ctx.fillStyle = core;
+  ctx.beginPath(); ctx.arc(cx, cy, R * pulse, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(255,225,170,.95)';
+  ctx.font = '700 15px -apple-system, "PingFang SC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('徐瑞鑫', cx, cy + R * 1.9 + 14);
+  ctx.restore();
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  T += dt * timeScale;
+  if (!down) { rot += rotV; rotV *= 0.94; if (Math.abs(rotV) < 0.0001) rotV = 0; }
+  speed += ((warpOn ? WARP : BASE) - speed) * 0.06;
+  const wa = warpAmt();
+  const alpha = 1 - wa * 0.92;
+  ctx.clearRect(0, 0, W, H);
+
+  // 星空
+  const ox = -(mouse.x - cx) * 0.04, oy = -(mouse.y - cy) * 0.04;
+  ctx.lineCap = 'round';
+  for (const s of stars) {
+    const pz = s.z;
+    s.z -= speed;
+    if (s.z <= 0.03) { s.z = 1; s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; continue; }
+    const [x2, y2] = proj(s, s.z, ox, oy);
+    if (x2 < -20 || x2 > W + 20 || y2 < -20 || y2 > H + 20) { s.z = 1; s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; continue; }
+    const [x1, y1] = proj(s, Math.min(1, pz), ox, oy);
+    const a = Math.min(1, (1 - s.z) * 1.4 + .15);
+    ctx.strokeStyle = `rgba(215,225,255,${a})`;
+    ctx.lineWidth = 0.6 + (1 - s.z) * 1.8;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2 + 0.01, y2);
+    ctx.stroke();
+  }
+
+  // 流星
+  if (Math.random() < 0.008 && !warpOn) {
+    shooting.push({ x: W * (0.3 + Math.random() * 0.7), y: Math.random() * H * 0.3, vx: -(8 + Math.random() * 5), vy: 4 + Math.random() * 3, life: 1 });
+  }
+  for (let i = shooting.length - 1; i >= 0; i--) {
+    const m = shooting[i];
+    m.x += m.vx; m.y += m.vy; m.life -= 0.018;
+    if (m.life <= 0) { shooting.splice(i, 1); continue; }
+    const g = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * 6, m.y - m.vy * 6);
+    g.addColorStop(0, `rgba(255,255,255,${m.life})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.strokeStyle = g; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x - m.vx * 6, m.y - m.vy * 6); ctx.stroke();
+  }
+
+  // 轨道
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  for (const p of planets) {
+    const rx = maxR * p.rr;
+    ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, rx * ryF, 0, 0, 6.283); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 行星 + 太阳
+  const L = layout();
+  L.filter(o => o.back).forEach(o => drawPlanet(o, alpha));
+  drawSun(alpha);
+  L.filter(o => !o.back).forEach(o => drawPlanet(o, alpha));
+
+  // 点击涟漪
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.r += 3.2; r.a -= 0.025;
+    if (r.a <= 0) { ripples.splice(i, 1); continue; }
+    ctx.strokeStyle = `rgba(255,207,107,${r.a})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 6.283); ctx.stroke();
+  }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ===== 触摸交互:点击 + 滑动 ===== */
+const panel = $('#panel');
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+
+function openPanel(p) {
+  selected = p; timeScale = 0.2; rotV = 0;
+  $('#pEmo').textContent = p.emoji;
+  $('#pTitle').textContent = p.name;
+  $('#pText').textContent = p.text;
+  panel.classList.add('open');
+  $('#hint').style.opacity = 0;
+  buzz(12);
+}
+function closePanel() {
+  selected = null; timeScale = 1;
+  panel.classList.remove('open');
+  $('#hint').style.opacity = 1;
+}
+
+let down = null;
+cv.addEventListener('pointerdown', e => {
+  down = { x: e.clientX, y: e.clientY, lx: e.clientX, moved: false };
+  rotV = 0;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+});
+cv.addEventListener('pointermove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  if (!down) return;
+  if (Math.abs(e.clientX - down.x) > 8 || Math.abs(e.clientY - down.y) > 8) down.moved = true;
+  if (down.moved) {
+    const dx = e.clientX - down.lx;
+    rot += dx * 0.008;
+    rotV = dx * 0.008;
+  }
+  down.lx = e.clientX;
+});
+function release(e) {
+  if (!down) return;
+  const wasTap = !down.moved;
+  down = null;
+  if (!wasTap) return;
+  const p = hit(e.clientX, e.clientY);
+  if (p) openPanel(p);
+  else {
+    ripples.push({ x: e.clientX, y: e.clientY, r: 4, a: 0.8 });
+    if (selected) closePanel();
+  }
+}
+cv.addEventListener('pointerup', release);
+cv.addEventListener('pointercancel', () => { down = null; });
+
+$('#close').addEventListener('click', closePanel);
+$('#warp').addEventListener('click', e => {
+  warpOn = !warpOn;
+  e.currentTarget.classList.toggle('on', warpOn);
+  e.currentTarget.textContent = warpOn ? '🚀 超光速:开' : '🚀 超光速:关';
+  if (warpOn && selected) closePanel();
+  buzz(warpOn ? 25 : 10);
+});
+
+// 禁止双指缩放 / 双击放大
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+</script>
+</body>
+</html>
